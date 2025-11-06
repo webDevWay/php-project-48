@@ -1,0 +1,54 @@
+{
+    "name": "hexlet/code",
+    "description": "Hexlet Project2: Differ",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+              "Differ\\": "src/"
+        },
+        "files": [
+            "src/DiffBuilder.php",
+            "src/Parsers.php",
+            "src/Formatters.php",
+            "src/Differ.php",
+            "src/Formatters/Stylish.php",
+            "src/Formatters/Plain.php",
+            "src/Formatters/Json.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Differ\\Tests\\": "tests/"
+        }
+    },
+    "bin": ["bin/gendiff"],
+    "authors": [
+        {
+            "name": "WebDevWay",
+            "email": "k.vasiliy.r@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.11",
+        "phpunit/phpunit": "^11.5"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "phpcs --standard=PSR12 src tests src/Formatters",
+        "lint-fix": "phpcbf --standard=PSR12 src bin tests",
+        "test-covers": [
+	    "@putenv XDEBUG_MODE=coverage",
+            "composer install -q",
+            "vendor/bin/phpunit --coverage-html coverage-report"
+        ]
+    },
+    "require": {
+        "symfony/class-loader": "^3.4",
+        "symfony/yaml": "^7.2",
+        "lstrojny/functional-php": "^1.17",
+        "docopt/docopt": "^1.0",
+        "funct/funct": "^1.6"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

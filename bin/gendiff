@@ -1,0 +1,60 @@
+#!/usr/bin/env php
+<?php
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use Docopt\Handler;
+use function Differ\genDiff;
+
+$doc = <<<'DOC'
+Generate diff
+
+Usage:
+  gendiff (-h|--help)
+  gendiff (-v|--version)
+  gendiff [--format <fmt>] <firstFile> <secondFile>
+
+Options:
+  -h --help                     Show this screen
+  -v --version                  Show version
+  --format <fmt>                Report format [default: stylish]
+DOC;
+
+function main(): void
+{
+    global $doc;
+    
+    try {
+        $handler = new Handler();
+        $response = $handler->handle($doc);
+        
+        if ($response['--help']) {
+            echo $doc . "\n";
+            exit(0);
+        }
+        
+        if ($response['--version']) {
+            echo "gendiff 1.0.0\n";
+            exit(0);
+        }
+        
+        if (!$response['<firstFile>'] || !$response['<secondFile>']) {
+            echo "Error: two files required\n";
+            echo $doc . "\n";
+            exit(1);
+        }
+        
+        $file1 = $response['<firstFile>'];
+        $file2 = $response['<secondFile>'];
+        $format = $response['--format'];
+        
+        $diff = genDiff($file1, $file2);
+        echo $diff . "\n";
+        
+    } catch (Exception $e) {
+        echo "Error: " . $e->getMessage() . "\n";
+        exit(1);
+    }
+}
+
+main();

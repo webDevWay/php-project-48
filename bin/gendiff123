@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+// bin/gendiff
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use function Differ\genDiff;
+
+$args = getopt('', ['format:']);
+$format = $args['format'] ?? 'stylish';
+
+if (count($argv) < 3) {
+    echo "Usage: gendiff [--format=stylish|plain|json] filepath1 filepath2\n";
+    exit(1);
+}
+
+$filepath1 = $argv[count($argv) - 2];
+$filepath2 = $argv[count($argv) - 1];
+
+try {
+    echo genDiff($filepath1, $filepath2, $format) . "\n";
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
+    exit(1);
+}
