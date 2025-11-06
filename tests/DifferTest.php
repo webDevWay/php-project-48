@@ -4,7 +4,7 @@ namespace Differ\Tests;
 
 use PHPUnit\Framework\TestCase;
 
-use function Differ\genDiff;
+use function Differ\Differ\genDiff;
 
 class DifferTest extends TestCase
 {
@@ -12,24 +12,24 @@ class DifferTest extends TestCase
     {
         $expected = <<<'EXPECTED'
 {
-    common: {
-      + follow: false
-        setting1: Value 1
-      - setting2: 200
-      - setting3: true
-      + setting3: null
-      + setting4: blah blah
-      + setting5: {
-            key5: value5
-        }
-        setting6: {
-            doge: {
-              - wow: 
-              + wow: so much
-            }
-            key: value
-          + ops: vops
-        }
+  common: {
+    + follow: false
+      setting1: Value 1
+    - setting2: 200
+    - setting3: true
+    + setting3: null
+    + setting4: blah blah
+    + setting5: {
+          key5: value5
+      }
+      setting6: {
+          doge: {
+            - wow: 
+            + wow: so much
+          }
+          key: value
+        + ops: vops
+      }
     }
     group1: {
       - baz: bas
