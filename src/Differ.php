@@ -2,7 +2,7 @@
 
 // src/Differ.php
 
-namespace Differ;
+namespace Differ\Differ;
 
 use function Differ\DiffBuilder\buildDiff;
 use function Differ\Parsers\parseFile;
