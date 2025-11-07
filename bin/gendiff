@@ -48,7 +48,7 @@ function main(): void
         $file2 = $response['<secondFile>'];
         $format = $response['--format'];
         
-        $diff = genDiff($file1, $file2);
+        $diff = genDiff($file1, $file2, $format);
         echo $diff . "\n";
         
     } catch (Exception $e) {

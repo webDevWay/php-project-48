@@ -16,7 +16,6 @@ function buildLines(array $diff, string $path = ''): array
 
     foreach ($diff as $node) {
         $currentPath = $path === '' ? $node['key'] : "{$path}.{$node['key']}";
-
         switch ($node['type']) {
             case 'nested':
                 $nestedLines = buildLines($node['children'], $currentPath);
