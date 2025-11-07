@@ -78,5 +78,5 @@ function stringify(mixed $value, int $depth): string
 
 function buildIndent(int $depth): string
 {
-    return str_repeat('    ', $depth);
+    return str_repeat('      ', $depth);
 }
