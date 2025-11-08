@@ -1,7 +1,5 @@
 <?php
 
-// src/Formatters/json.php
-
 namespace Differ\Formatters\Json;
 
 function format(array $diff): string
