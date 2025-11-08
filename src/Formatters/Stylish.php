@@ -59,3 +59,4 @@ function formatValue($value, int $depth): string
 
     return "{\n" . implode("\n", $lines) . "\n{$indent}}";
 }
+
