@@ -78,6 +78,6 @@ function formatValue(mixed $value, int $depth): string
 
 function buildIndent(int $depth): string
 {
-    $depth = $depth * 4 - 2;
+    $depth = $depth * 2 - 2;
     return str_repeat('  ', $depth);
 }
