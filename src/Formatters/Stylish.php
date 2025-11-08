@@ -2,50 +2,38 @@
 
 namespace Differ\Formatters\Stylish;
 
-function formatStylish(array $diff): string
-{
-    return iter($diff, 0);
-}
+use function Funct\Collection\flattenAll;
 
-function iter(array $nodes, int $depth): string
+function formatStylish(array $diff, int $depth = 1): string
 {
-    $indent = str_repeat('    ', $depth);
-    $lines = array_map(function ($node) use ($depth) {
-        $type = $node['type'];
-        $key = $node['key'];
-        $currentIndent = str_repeat('    ', $depth + 1);
-
-        switch ($type) {
+    $indent = str_repeat('    ', $depth - 1);
+    $lines = array_map(function ($node) use ($depth, $indent) {
+        switch ($node['type']) {
             case 'nested':
-                $children = iter($node['children'], $depth + 1);
-                return "{$currentIndent}  {$key}: {$children}";
-
+                $formattedChildren = formatStylish($node['children'], $depth + 1);
+                return "{$indent}    {$node['key']}: {$formattedChildren}";
             case 'added':
-                $value = stringify($node['value'], $depth + 1);
-                return "{$currentIndent}+ {$key}: {$value}";
-
+                $formattedValue = formatValue($node['value'], $depth + 1);
+                return "{$indent}  + {$node['key']}: {$formattedValue}";
             case 'removed':
-                $value = stringify($node['value'], $depth + 1);
-                return "{$currentIndent}- {$key}: {$value}";
-
+                $formattedValue = formatValue($node['value'], $depth + 1);
+                return "{$indent}  - {$node['key']}: {$formattedValue}";
             case 'changed':
-                $oldValue = stringify($node['oldValue'], $depth + 1);
-                $newValue = stringify($node['newValue'], $depth + 1);
-                return "{$currentIndent}- {$key}: {$oldValue}\n{$currentIndent}+ {$key}: {$newValue}";
-
+                $oldValue = formatValue($node['oldValue'], $depth + 1);
+                $newValue = formatValue($node['newValue'], $depth + 1);
+                return "{$indent}  - {$node['key']}: {$oldValue}\n{$indent}  + {$node['key']}: {$newValue}";
             case 'unchanged':
-                $value = stringify($node['value'], $depth + 1);
-                return "{$currentIndent}  {$key}: {$value}";
-
+                $formattedValue = formatValue($node['value'], $depth + 1);
+                return "{$indent}    {$node['key']}: {$formattedValue}";
             default:
-                throw new \Exception("Unknown type: {$type}");
+                throw new \Exception("Unknown node type: {$node['type']}");
         }
-    }, $nodes);
+    }, $diff);
 
     return "{\n" . implode("\n", $lines) . "\n{$indent}}";
 }
 
-function stringify(mixed $value, int $depth): string
+function formatValue($value, int $depth): string
 {
     if (is_bool($value)) {
         return $value ? 'true' : 'false';
@@ -55,9 +43,19 @@ function stringify(mixed $value, int $depth): string
         return 'null';
     }
 
-    if (is_array($value)) {
-        return iter([], $depth);
+    if (!is_array($value)) {
+        return (string) $value;
     }
 
-    return (string) $value;
+    if (empty($value)) {
+        return '{}';
+    }
+
+    $indent = str_repeat('    ', $depth);
+    $lines = array_map(function ($key) use ($value, $depth, $indent) {
+        $formattedValue = formatValue($value[$key], $depth + 1);
+        return "{$indent}    {$key}: {$formattedValue}";
+    }, array_keys($value));
+
+    return "{\n" . implode("\n", $lines) . "\n{$indent}}";
 }
