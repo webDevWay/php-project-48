@@ -1,55 +1,106 @@
 <?php
 
-// src/DiffBuilder.php
-
 namespace Differ\DiffBuilder;
 
-use function Funct\Collection\sortBy;
-
-function buildDiff(array $data1, array $data2): array
+function buildDiff(object $data1, object $data2): array
 {
-    $keys = array_unique(array_merge(array_keys($data1), array_keys($data2)));
-    $sortedKeys = sortBy($keys, fn($key) => $key);
+    $keys1 = array_keys(get_object_vars($data1));
+    $keys2 = array_keys(get_object_vars($data2));
+    $allKeys = array_unique(array_merge($keys1, $keys2));
+    $sortedKeys = sortKeys($allKeys);
 
-    $diff = [];
+    return array_map(function ($key) use ($data1, $data2) {
+        return buildNode($key, $data1, $data2);
+    }, $sortedKeys);
+}
 
-    foreach ($sortedKeys as $key) {
-        $value1 = $data1[$key] ?? null;
-        $value2 = $data2[$key] ?? null;
+function buildNode(string $key, object $data1, object $data2): array
+{
+    $value1 = getValue($data1, $key);
+    $value2 = getValue($data2, $key);
 
-        if (!array_key_exists($key, $data1)) {
-            $diff[] = [
-                'key' => $key,
-                'type' => 'added',
-                'value' => $value2
-            ];
-        } elseif (!array_key_exists($key, $data2)) {
-            $diff[] = [
-                'key' => $key,
-                'type' => 'removed',
-                'value' => $value1
-            ];
-        } elseif (is_array($value1) && is_array($value2)) {
-            $diff[] = [
-                'key' => $key,
-                'type' => 'nested',
-                'children' => buildDiff($value1, $value2)
-            ];
-        } elseif ($value1 === $value2) {
-            $diff[] = [
-                'key' => $key,
-                'type' => 'unchanged',
-                'value' => $value1
-            ];
-        } else {
-            $diff[] = [
-                'key' => $key,
-                'type' => 'changed',
-                'oldValue' => $value1,
-                'newValue' => $value2
-            ];
-        }
+    $hasInFirst = property_exists($data1, $key);
+    $hasInSecond = property_exists($data2, $key);
+
+    if (!$hasInFirst) {
+        return buildAddedNode($key, $value2);
     }
 
-    return $diff;
+    if (!$hasInSecond) {
+        return buildRemovedNode($key, $value1);
+    }
+
+    if (isObject($value1) && isObject($value2)) {
+        return buildNestedNode($key, $value1, $value2);
+    }
+
+    if ($value1 === $value2) {
+        return buildUnchangedNode($key, $value1);
+    }
+
+    return buildChangedNode($key, $value1, $value2);
+}
+
+function buildAddedNode(string $key, mixed $value): array
+{
+    return [
+        'type' => 'added',
+        'key' => $key,
+        'value' => $value
+    ];
+}
+
+function buildRemovedNode(string $key, mixed $value): array
+{
+    return [
+        'type' => 'removed',
+        'key' => $key,
+        'value' => $value
+    ];
+}
+
+function buildUnchangedNode(string $key, mixed $value): array
+{
+    return [
+        'type' => 'unchanged',
+        'key' => $key,
+        'value' => $value
+    ];
+}
+
+function buildChangedNode(string $key, mixed $oldValue, mixed $newValue): array
+{
+    return [
+        'type' => 'changed',
+        'key' => $key,
+        'oldValue' => $oldValue,
+        'newValue' => $newValue
+    ];
+}
+
+function buildNestedNode(string $key, object $oldValue, object $newValue): array
+{
+    return [
+        'type' => 'nested',
+        'key' => $key,
+        'children' => buildDiff($oldValue, $newValue)
+    ];
+}
+
+function getValue(object $data, string $key): mixed
+{
+    return property_exists($data, $key) ? $data->$key : null;
+}
+
+function isObject(mixed $value): bool
+{
+    return is_object($value);
+}
+
+function sortKeys(array $keys): array
+{
+    usort($keys, function ($a, $b) {
+        return strcmp($a, $b);
+    });
+    return $keys;
 }

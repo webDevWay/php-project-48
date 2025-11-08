@@ -1,10 +1,8 @@
 <?php
 
-// src/Formatters/plain.php
-
 namespace Differ\Formatters\Plain;
 
-function formatPlain(array $diff): string
+function format(array $diff): string
 {
     $lines = buildLines($diff);
     return implode("\n", $lines);
@@ -16,12 +14,8 @@ function buildLines(array $diff, string $path = ''): array
 
     foreach ($diff as $node) {
         $currentPath = $path === '' ? $node['key'] : "{$path}.{$node['key']}";
-        switch ($node['type']) {
-            case 'nested':
-                $nestedLines = buildLines($node['children'], $currentPath);
-                $lines = array_merge($lines, $nestedLines);
-                break;
 
+        switch ($node['type']) {
             case 'added':
                 $value = formatValue($node['value']);
                 $lines[] = "Property '{$currentPath}' was added with value: {$value}";
@@ -37,9 +31,17 @@ function buildLines(array $diff, string $path = ''): array
                 $lines[] = "Property '{$currentPath}' was updated. From {$oldValue} to {$newValue}";
                 break;
 
-            case 'unchanged':
-                // Не выводим неизмененные свойства в plain формате
+            case 'nested':
+                $nestedLines = buildLines($node['children'], $currentPath);
+                $lines = array_merge($lines, $nestedLines);
                 break;
+
+            case 'unchanged':
+                // unchanged nodes are not shown in plain format
+                break;
+
+            default:
+                throw new \Exception("Unknown node type: {$node['type']}");
         }
     }
 
@@ -48,8 +50,12 @@ function buildLines(array $diff, string $path = ''): array
 
 function formatValue(mixed $value): string
 {
-    if (is_array($value)) {
+    if (is_object($value)) {
         return '[complex value]';
+    }
+
+    if (is_string($value)) {
+        return "'{$value}'";
     }
 
     if (is_bool($value)) {
@@ -58,10 +64,6 @@ function formatValue(mixed $value): string
 
     if (is_null($value)) {
         return 'null';
-    }
-
-    if (is_string($value)) {
-        return "'{$value}'";
     }
 
     return (string) $value;

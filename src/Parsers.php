@@ -3,8 +3,9 @@
 namespace Differ\Parsers;
 
 use Symfony\Component\Yaml\Yaml;
+use Exception;
 
-function parse(string $content, string $format): array
+function parse(string $content, string $format): object
 {
     return match ($format) {
         'json' => parseJson($content),
@@ -13,48 +14,45 @@ function parse(string $content, string $format): array
     };
 }
 
-function parseFile(string $filepath): array
+function parseJson(string $content): object
 {
-    $content = file_get_contents($filepath);
-    if ($content === false) {
-        throw new \Exception("Unable to read file: {$filepath}");
-    }
-
-    $extension = pathinfo($filepath, PATHINFO_EXTENSION);
-
-    return parse($content, $extension);
-}
-
-function parseJson(string $content): array
-{
-    $data = json_decode($content, true);
+    $data = json_decode($content);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new \Exception("Invalid JSON: " . json_last_error_msg());
+        throw new Exception("JSON parsing error: " . json_last_error_msg());
     }
 
     return $data;
 }
 
-function parseYaml(string $content): array
+function parseYaml(string $content): object
 {
     try {
         $data = Yaml::parse($content, Yaml::PARSE_OBJECT_FOR_MAP);
-        return objectToArray($data);
-    } catch (\Exception $e) {
-        throw new \Exception("Invalid YAML: " . $e->getMessage());
+
+        if (is_array($data)) {
+            return (object) $data;
+        }
+
+        return $data;
+    } catch (Exception $e) {
+        throw new Exception("YAML parsing error: " . $e->getMessage());
     }
 }
 
-function objectToArray(mixed $data)
+function getFileFormat(string $filePath): string
 {
-    if (is_object($data)) {
-        $data = (array) $data;
+    $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+
+    $supportedFormats = [
+        'json' => 'json',
+        'yaml' => 'yaml',
+        'yml' => 'yaml'
+    ];
+
+    if (!array_key_exists($extension, $supportedFormats)) {
+        throw new Exception("Unsupported file format: {$extension}");
     }
 
-    if (is_array($data)) {
-        return array_map('Differ\Parsers\objectToArray', $data);
-    }
-
-    return $data;
+    return $supportedFormats[$extension];
 }

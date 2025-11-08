@@ -4,114 +4,76 @@ namespace Differ\Tests;
 
 use PHPUnit\Framework\TestCase;
 
-use function Differ\Parsers\parse;
-use function Differ\Parsers\parseFile;
+use function Differ\Parsers\{parse, getFileFormat};
 
 class ParsersTest extends TestCase
 {
-    public function testParseJsonReturnsArray(): void
+    public function testParseJsonReturnsObject(): void
     {
-        $json = '{"key": "value", "number": 42}';
+        $json = '{"key": "value", "number": 123}';
         $result = parse($json, 'json');
 
-        $this->assertEquals(['key' => 'value', 'number' => 42], $result);
+        $this->assertIsObject($result);
+        $this->assertEquals('value', $result->key);
+        $this->assertEquals(123, $result->number);
     }
 
-    public function testParseYamlReturnsArray(): void
+    public function testParseYamlReturnsObject(): void
     {
-        $yaml = "key: value\nnumber: 42\nnested:\n  subkey: subvalue";
+        $yaml = "key: value\nnumber: 123";
         $result = parse($yaml, 'yaml');
 
-        $expected = [
-            'key' => 'value',
-            'number' => 42,
-            'nested' => ['subkey' => 'subvalue']
-        ];
-        $this->assertEquals($expected, $result);
+        $this->assertIsObject($result);
+        $this->assertEquals('value', $result->key);
+        $this->assertEquals(123, $result->number);
     }
 
-    public function testParseYamlWithObjectsReturnsArray(): void
+    public function testParseYamlWithNestedStructure(): void
     {
-        $yaml = "user:\n  name: John\n  age: 30";
+        $yaml = "parent:\n  child: value";
         $result = parse($yaml, 'yaml');
 
-        $this->assertIsArray($result);
-        $this->assertIsArray($result['user']);
-        $this->assertEquals('John', $result['user']['name']);
-        $this->assertEquals(30, $result['user']['age']);
+        $this->assertIsObject($result);
+        $this->assertIsObject($result->parent);
+        $this->assertEquals('value', $result->parent->child);
     }
 
-    public function testParseComplexYamlStructure(): void
+    public function testGetFileFormat(): void
     {
-        $yaml = <<<YAML
-common:
-  setting1: Value 1
-  setting2: 200
-  setting3: true
-  setting6:
-    key: value
-    doge:
-      wow: ''
-group1:
-  baz: bas
-  foo: bar
-  nest:
-    key: value
-group2:
-  abc: 12345
-  deep:
-    id: 45
-YAML;
-
-        $result = parse($yaml, 'yaml');
-
-        $this->assertIsArray($result);
-        $this->assertIsArray($result['common']);
-        $this->assertIsArray($result['common']['setting6']);
-        $this->assertIsArray($result['common']['setting6']['doge']);
-        $this->assertEquals('', $result['common']['setting6']['doge']['wow']);
+        $this->assertEquals('json', getFileFormat('file.json'));
+        $this->assertEquals('yaml', getFileFormat('file.yaml'));
+        $this->assertEquals('yaml', getFileFormat('file.yml'));
     }
 
-    public function testParseInvalidJsonThrowsException(): void
-    {
-        $invalidJson = '{"key": "value",}';
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Invalid JSON');
-
-        parse($invalidJson, 'json');
-    }
-
-    public function testParseInvalidYamlThrowsException(): void
-    {
-        $invalidYaml = "key: value\n  indented: wrong";
-
-        $this->expectException(\Exception::class);
-
-        parse($invalidYaml, 'yaml');
-    }
-
-    public function testParseFileWithJsonExtension(): void
-    {
-        $result = parseFile('tests/fixtures/file1.json');
-
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('common', $result);
-    }
-
-    public function testParseFileWithYamlExtension(): void
-    {
-        $result = parseFile('tests/fixtures/file1.yaml');
-
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('common', $result);
-    }
-
-    public function testParseUnsupportedFormatThrowsException(): void
+    public function testGetFileFormatWithUnsupportedFormat(): void
     {
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Unsupported format: xml');
+        $this->expectExceptionMessage("Unsupported file format: txt");
 
-        parse('content', 'xml');
+        getFileFormat('file.txt');
+    }
+
+    public function testParseWithInvalidJson(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("JSON parsing error");
+
+        parse('invalid json', 'json');
+    }
+
+    public function testParseWithInvalidYaml(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("YAML parsing error");
+
+        parse("invalid: yaml: content", 'yaml');
+    }
+
+    public function testParseWithUnsupportedFormat(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("Unsupported format: xml");
+
+        parse('<xml></xml>', 'xml');
     }
 }
