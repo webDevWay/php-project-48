@@ -1,82 +1,65 @@
 <?php
-
 // src/Formatters/stylish.php
 
 namespace Differ\Formatters;
 
 function formatStylish(array $diff): string
 {
-    return iter($diff, 1);
+    return iter($diff);
 }
 
-function iter(array $diff, int $depth): string
+function iter(array $nodes, int $depth = 0): string
 {
-    $indent = buildIndent($depth);
-    $bracketIndent = buildIndent($depth - 1);
-
+    $indent = str_repeat('    ', $depth);
     $lines = array_map(function ($node) use ($depth, $indent) {
-        $type = $node['type'];
-        $key = $node['key'];
-
-        switch ($type) {
-            case 'added':
-                $value = stringify($node['value'], $depth);
-                return "{$indent}+ {$key}: {$value}";
-            case 'removed':
-                $value = stringify($node['value'], $depth);
-                return "{$indent}- {$key}: {$value}";
-            case 'unchanged':
-                $value = stringify($node['value'], $depth);
-                return "{$indent}  {$key}: {$value}";
-            case 'changed':
-                $oldValue = stringify($node['oldValue'], $depth);
-                $newValue = stringify($node['newValue'], $depth);
-                return "{$indent}- {$key}: {$oldValue}\n{$indent}+ {$key}: {$newValue}";
+        switch ($node['type']) {
             case 'nested':
                 $children = iter($node['children'], $depth + 1);
-                return "{$indent}  {$key}: {$children}";
+                return "{$indent}    {$node['key']}: {$children}";
+                
+            case 'added':
+                $value = toString($node['value'], $depth);
+                return "{$indent}  + {$node['key']}: {$value}";
+                
+            case 'removed':
+                $value = toString($node['value'], $depth);
+                return "{$indent}  - {$node['key']}: {$value}";
+                
+            case 'changed':
+                $oldValue = toString($node['oldValue'], $depth);
+                $newValue = toString($node['newValue'], $depth);
+                return "{$indent}  - {$node['key']}: {$oldValue}\n{$indent}  + {$node['key']}: {$newValue}";
+                
+            case 'unchanged':
+                $value = toString($node['value'], $depth);
+                return "{$indent}    {$node['key']}: {$value}";
+                
             default:
-                throw new \Exception("Unknown type: {$type}");
+                throw new \Exception("Unknown type: {$node['type']}");
         }
-    }, $diff);
-
-    return implode("\n", [
-        "{",
-        ...$lines,
-        "{$bracketIndent}}"
-    ]);
+    }, $nodes);
+    
+    $bracketIndent = str_repeat('    ', max(0, $depth - 1));
+    $result = ["{"];
+    $result = array_merge($result, $lines);
+    $result[] = "{$bracketIndent}}";
+    
+    return implode("\n", $result);
 }
 
-function stringify(mixed $value, int $depth): string
+function toString(mixed $value, int $depth): string
 {
     if (is_bool($value)) {
         return $value ? 'true' : 'false';
     }
-
+    
     if (is_null($value)) {
         return 'null';
     }
-
-    if (!is_array($value)) {
-        return (string) $value;
+    
+    if (is_array($value)) {
+        return iter([], $depth + 1);
     }
-
-    $indent = buildIndent($depth);
-    $bracketIndent = buildIndent($depth - 1);
-
-    $lines = array_map(function ($key, $val) use ($depth, $indent) {
-        $formattedValue = stringify($val, $depth + 1);
-        return "{$indent}  {$key}: {$formattedValue}";
-    }, array_keys($value), $value);
-
-    return implode("\n", [
-        "{",
-        ...$lines,
-        "{$bracketIndent}  }"
-    ]);
-}
-
-function buildIndent(int $depth): string
-{
-    return str_repeat(' ', $depth * 4 - 2);
+    
+    return (string) $value;
 }
