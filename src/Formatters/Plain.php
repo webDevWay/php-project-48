@@ -2,7 +2,7 @@
 
 // src/Formatters/plain.php
 
-namespace Differ\Formatters;
+namespace Differ\Formatters\Plain;
 
 function formatPlain(array $diff): string
 {

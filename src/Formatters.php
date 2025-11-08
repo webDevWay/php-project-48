@@ -4,8 +4,8 @@
 
 namespace Differ\Formatters;
 
-use function Differ\Formatters\formatStylish;
-use function Differ\Formatters\formatPlain;
+use function Differ\Formatters\Stylish\formatStylish;
+use function Differ\Formatters\Plain\formatPlain;
 use function Differ\Formatters\formatJson;
 
 function format(array $diff, string $formatName): string
