@@ -5,41 +5,18 @@ namespace Differ\Formatters;
 
 function formatStylish(array $diff): string
 {
-    return iter($diff);
+    return buildTree($diff, 1);
 }
 
-function iter(array $nodes, int $depth = 0): string
+function buildTree(array $diff, int $depth): string
 {
-    $indent = str_repeat('    ', $depth);
-    $lines = array_map(function ($node) use ($depth, $indent) {
-        switch ($node['type']) {
-            case 'nested':
-                $children = iter($node['children'], $depth + 1);
-                return "{$indent}    {$node['key']}: {$children}";
-                
-            case 'added':
-                $value = toString($node['value'], $depth);
-                return "{$indent}  + {$node['key']}: {$value}";
-                
-            case 'removed':
-                $value = toString($node['value'], $depth);
-                return "{$indent}  - {$node['key']}: {$value}";
-                
-            case 'changed':
-                $oldValue = toString($node['oldValue'], $depth);
-                $newValue = toString($node['newValue'], $depth);
-                return "{$indent}  - {$node['key']}: {$oldValue}\n{$indent}  + {$node['key']}: {$newValue}";
-                
-            case 'unchanged':
-                $value = toString($node['value'], $depth);
-                return "{$indent}    {$node['key']}: {$value}";
-                
-            default:
-                throw new \Exception("Unknown type: {$node['type']}");
-        }
-    }, $nodes);
+    $indent = buildIndent($depth);
+    $bracketIndent = buildIndent($depth - 1);
     
-    $bracketIndent = str_repeat('    ', max(0, $depth - 1));
+    $lines = array_map(function ($node) use ($depth, $indent) {
+        return buildLine($node, $depth, $indent);
+    }, $diff);
+    
     $result = ["{"];
     $result = array_merge($result, $lines);
     $result[] = "{$bracketIndent}}";
@@ -47,7 +24,39 @@ function iter(array $nodes, int $depth = 0): string
     return implode("\n", $result);
 }
 
-function toString(mixed $value, int $depth): string
+function buildLine(array $node, int $depth, string $indent): string
+{
+    $key = $node['key'];
+    $type = $node['type'];
+    
+    switch ($type) {
+        case 'nested':
+            $children = buildTree($node['children'], $depth + 1);
+            return "{$indent}  {$key}: {$children}";
+            
+        case 'added':
+            $value = stringify($node['value'], $depth);
+            return "{$indent}+ {$key}: {$value}";
+            
+        case 'removed':
+            $value = stringify($node['value'], $depth);
+            return "{$indent}- {$key}: {$value}";
+            
+        case 'changed':
+            $oldValue = stringify($node['oldValue'], $depth);
+            $newValue = stringify($node['newValue'], $depth);
+            return "{$indent}- {$key}: {$oldValue}\n{$indent}+ {$key}: {$newValue}";
+            
+        case 'unchanged':
+            $value = stringify($node['value'], $depth);
+            return "{$indent}  {$key}: {$value}";
+            
+        default:
+            throw new \Exception("Unknown node type: {$type}");
+    }
+}
+
+function stringify(mixed $value, int $depth): string
 {
     if (is_bool($value)) {
         return $value ? 'true' : 'false';
@@ -57,9 +66,26 @@ function toString(mixed $value, int $depth): string
         return 'null';
     }
     
-    if (is_array($value)) {
-        return iter([], $depth + 1);
+    if (!is_array($value)) {
+        return (string) $value;
     }
     
-    return (string) $value;
+    $indent = buildIndent($depth);
+    $bracketIndent = buildIndent($depth - 1);
+    
+    $lines = array_map(function ($key, $val) use ($depth, $indent) {
+        $formattedValue = stringify($val, $depth + 1);
+        return "{$indent}  {$key}: {$formattedValue}";
+    }, array_keys($value), $value);
+    
+    $result = ["{"];
+    $result = array_merge($result, $lines);
+    $result[] = "{$bracketIndent}  }";
+    
+    return implode("\n", $result);
+}
+
+function buildIndent(int $depth): string
+{
+    return str_repeat('    ', $depth);
 }
