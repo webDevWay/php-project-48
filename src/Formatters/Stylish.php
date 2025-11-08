@@ -8,7 +8,7 @@ function format(array $diff): string
     return "{\n" . implode("\n", $lines) . "\n}";
 }
 
-function buildLines(array $diff, int $depth = 0): array
+function buildLines(array $diff, int $depth = 1): array
 {
     $lines = array_map(function ($node) use ($depth) {
         return buildLine($node, $depth);
@@ -78,5 +78,6 @@ function formatValue(mixed $value, int $depth): string
 
 function buildIndent(int $depth): string
 {
-    return str_repeat('    ', $depth);
+    $depth = $depth * 2 - 2;
+    return str_repeat(' ', $depth);
 }
