@@ -20,4 +20,5 @@
 Генерация отчета в виде plain text, stylish и json<br>
 
 [Пример Работы c 1 вариантом](https://asciinema.org/a/9PCDKX373YPsNxNkParNsjw1y)
+
 [Пример работы: все варианты](https://asciinema.org/a/qCemnQAD2q8U3thralPkXcllQ)
