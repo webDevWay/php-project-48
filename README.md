@@ -19,6 +19,22 @@
 Поддержка разных входных форматов: yaml и json<br>
 Генерация отчета в виде plain text, stylish и json<br>
 
+Установка:
+
+git clone https://github.com/webDevWay/php-project-48
+make install
+
+Readme:
+
+gendiff -h
+
+Зависимости:
+
+PHP 8.1+
+Composer
+Make
+
+
 [Пример Работы c 1 вариантом](https://asciinema.org/a/9PCDKX373YPsNxNkParNsjw1y)
 
 [Пример работы: все варианты](https://asciinema.org/a/qCemnQAD2q8U3thralPkXcllQ)
