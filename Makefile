@@ -30,10 +30,12 @@ test1:
 test2:
 	php ./bin/gendiff ./tests/fixtures/file1.json ./tests/fixtures/file2.json
 test3:
-	php ./bin/gendiff ./tests/fixtures/file1.json ./tests/fixtures/file2.json --format plain
+	php ./bin/gendiff ./tests/fixtures/file1.json ./tests/fixtures/file2.yaml
 test4:
-	php ./bin/gendiff ./tests/fixtures/file1.yaml ./tests/fixtures/file2.yaml --format plain
+	php ./bin/gendiff ./tests/fixtures/file1.json ./tests/fixtures/file2.json --format plain
 test5:
-	php ./bin/gendiff ./tests/fixtures/file1.yaml ./tests/fixtures/file2.yaml --format json
+	php ./bin/gendiff ./tests/fixtures/file1.yaml ./tests/fixtures/file2.yaml --format plain
 test6:
+	php ./bin/gendiff ./tests/fixtures/file1.yaml ./tests/fixtures/file2.yaml --format json
+test7:
 	php ./bin/gendiff ./tests/fixtures/file1.json ./tests/fixtures/file2.json --format json
