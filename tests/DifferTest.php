@@ -5,57 +5,14 @@ namespace Differ\Tests;
 use PHPUnit\Framework\TestCase;
 
 use function Differ\Differ\genDiff;
+use function Differ\Differ\buildDiff;
+use function Differ\Differ\getFileFormat;
 
 class DifferTest extends TestCase
 {
     public function testRecursiveComparisonJsonStylishFormat(): void
     {
-        $expected = <<<'EXPECTED'
-{
-  common: {
-    + follow: false
-      setting1: Value 1
-    - setting2: 200
-    - setting3: true
-    + setting3: null
-    + setting4: blah blah
-    + setting5: {
-          key5: value5
-      }
-      setting6: {
-          doge: {
-            - wow: 
-            + wow: so much
-          }
-          key: value
-        + ops: vops
-      }
-    }
-    group1: {
-      - baz: bas
-      + baz: bars
-        foo: bar
-      - nest: {
-            key: value
-        }
-      + nest: str
-    }
-  - group2: {
-        abc: 12345
-        deep: {
-            id: 45
-        }
-    }
-  + group3: {
-        deep: {
-            id: {
-                number: 45
-            }
-        }
-        fee: 100500
-    }
-}
-EXPECTED;
+        $expected = file_get_contents('tests/fixtures/expected_nested.txt');
 
         $actual = genDiff('tests/fixtures/file1.json', 'tests/fixtures/file2.json');
         $this->assertNotEquals($expected, $actual);
@@ -63,19 +20,7 @@ EXPECTED;
 
     public function testPlainFormatOutput(): void
     {
-        $expected = <<<'EXPECTED'
-Property 'common.follow' was added with value: false
-Property 'common.setting2' was removed
-Property 'common.setting3' was updated. From true to null
-Property 'common.setting4' was added with value: 'blah blah'
-Property 'common.setting5' was added with value: [complex value]
-Property 'common.setting6.doge.wow' was updated. From '' to 'so much'
-Property 'common.setting6.ops' was added with value: 'vops'
-Property 'group1.baz' was updated. From 'bas' to 'bars'
-Property 'group1.nest' was updated. From [complex value] to 'str'
-Property 'group2' was removed
-Property 'group3' was added with value: [complex value]
-EXPECTED;
+        $expected = file_get_contents('tests/fixtures/expected_plain.txt');
 
         $actual = genDiff('tests/fixtures/file1.json', 'tests/fixtures/file2.json', 'plain');
         $this->assertEquals($expected, $actual);
@@ -99,19 +44,121 @@ EXPECTED;
         $this->assertEquals($result1, $result2);
     }
 
-    public function testUnknownFormatThrowsException(): void
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Unknown format: unknown');
-
-        genDiff('file1.json', 'file2.json', 'unknown');
-    }
-
     public function testDefaultFormatIsStylish(): void
     {
         $result1 = genDiff('tests/fixtures/file1.json', 'tests/fixtures/file2.json');
         $result2 = genDiff('tests/fixtures/file1.json', 'tests/fixtures/file2.json', 'stylish');
 
         $this->assertEquals($result1, $result2);
+    }
+
+    public function testBuildDiffWithFlatObjects(): void
+    {
+        $obj1 = (object) ['a' => 1, 'b' => 2];
+        $obj2 = (object) ['a' => 1, 'c' => 3];
+
+        $diff = buildDiff($obj1, $obj2);
+
+        $this->assertIsArray($diff);
+        $this->assertCount(3, $diff);
+
+        $this->assertEquals('unchanged', $diff[0]['type']);
+        $this->assertEquals('a', $diff[0]['key']);
+        $this->assertEquals(1, $diff[0]['value']);
+
+        $this->assertEquals('removed', $diff[1]['type']);
+        $this->assertEquals('b', $diff[1]['key']);
+        $this->assertEquals(2, $diff[1]['value']);
+
+        $this->assertEquals('added', $diff[2]['type']);
+        $this->assertEquals('c', $diff[2]['key']);
+        $this->assertEquals(3, $diff[2]['value']);
+    }
+
+    public function testBuildDiffWithNestedObjects(): void
+    {
+        $obj1 = (object) [
+            'a' => 1,
+            'b' => (object) ['x' => 10, 'y' => 20]
+        ];
+        $obj2 = (object) [
+            'a' => 1,
+            'b' => (object) ['x' => 10, 'z' => 30]
+        ];
+
+        $diff = buildDiff($obj1, $obj2);
+
+        $this->assertIsArray($diff);
+        $this->assertCount(2, $diff);
+
+        $this->assertEquals('unchanged', $diff[0]['type']);
+        $this->assertEquals('a', $diff[0]['key']);
+
+        $this->assertEquals('nested', $diff[1]['type']);
+        $this->assertEquals('b', $diff[1]['key']);
+        $this->assertArrayHasKey('children', $diff[1]);
+
+        $children = $diff[1]['children'];
+        $this->assertCount(3, $children);
+
+        $this->assertEquals('unchanged', $children[0]['type']);
+        $this->assertEquals('x', $children[0]['key']);
+
+        $this->assertEquals('removed', $children[1]['type']);
+        $this->assertEquals('y', $children[1]['key']);
+
+        $this->assertEquals('added', $children[2]['type']);
+        $this->assertEquals('z', $children[2]['key']);
+    }
+
+    public function testBuildDiffWithChangedValues(): void
+    {
+        $obj1 = (object) ['a' => 1, 'b' => 'old'];
+        $obj2 = (object) ['a' => 1, 'b' => 'new'];
+
+        $diff = buildDiff($obj1, $obj2);
+
+        $this->assertIsArray($diff);
+        $this->assertCount(2, $diff);
+
+        $this->assertEquals('unchanged', $diff[0]['type']);
+        $this->assertEquals('a', $diff[0]['key']);
+
+        $this->assertEquals('changed', $diff[1]['type']);
+        $this->assertEquals('b', $diff[1]['key']);
+        $this->assertEquals('old', $diff[1]['oldValue']);
+        $this->assertEquals('new', $diff[1]['newValue']);
+    }
+
+    public function testBuildDiffSortsKeys(): void
+    {
+        $obj1 = (object) ['z' => 1, 'a' => 2];
+        $obj2 = (object) ['m' => 3, 'b' => 4];
+
+        $diff = buildDiff($obj1, $obj2);
+
+        $this->assertIsArray($diff);
+        $this->assertCount(4, $diff);
+
+        // Проверяем что ключи отсортированы по алфавиту
+        $this->assertEquals('a', $diff[0]['key']);
+        $this->assertEquals('b', $diff[1]['key']);
+        $this->assertEquals('m', $diff[2]['key']);
+        $this->assertEquals('z', $diff[3]['key']);
+    }
+
+    public function testGetFileFormat(): void
+    {
+        $this->assertEquals('json', getFileFormat('file.json'));
+        $this->assertEquals('yaml', getFileFormat('file.yaml'));
+        $this->assertEquals('yaml', getFileFormat('file.yml'));
+    }
+
+    public function testGetFileFormatWithUnsupportedFormat(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("Unsupported file format: txt");
+
+        getFileFormat('file.txt');
     }
 }

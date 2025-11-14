@@ -27,32 +27,7 @@ function parseJson(string $content): object
 
 function parseYaml(string $content): object
 {
-    try {
-        $data = Yaml::parse($content, Yaml::PARSE_OBJECT_FOR_MAP);
+    $data = Yaml::parse($content, Yaml::PARSE_OBJECT_FOR_MAP);
 
-        if (is_array($data)) {
-            return (object) $data;
-        }
-
-        return $data;
-    } catch (Exception $e) {
-        throw new Exception("YAML parsing error: " . $e->getMessage());
-    }
-}
-
-function getFileFormat(string $filePath): string
-{
-    $extension = pathinfo($filePath, PATHINFO_EXTENSION);
-
-    $supportedFormats = [
-        'json' => 'json',
-        'yaml' => 'yaml',
-        'yml' => 'yaml'
-    ];
-
-    if (!array_key_exists($extension, $supportedFormats)) {
-        throw new Exception("Unsupported file format: {$extension}");
-    }
-
-    return $supportedFormats[$extension];
+    return $data;
 }

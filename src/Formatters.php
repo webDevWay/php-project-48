@@ -6,17 +6,16 @@ use function Differ\Formatters\Stylish\format as formatStylish;
 use function Differ\Formatters\Plain\format as formatPlain;
 use function Differ\Formatters\Json\format as formatJson;
 
-function format(array $diff, string $formatName = 'stylish'): string
+function render(array $diff, string $formatName = 'stylish'): string
 {
-    $formatters = [
-        'stylish' => fn($diff) => formatStylish($diff),
-        'plain' => fn($diff) => formatPlain($diff),
-        'json' => fn($diff) => formatJson($diff)
-    ];
-
-    if (!array_key_exists($formatName, $formatters)) {
-        throw new \Exception("Unknown format: {$formatName}");
+    switch ($formatName) {
+        case 'stylish':
+            return formatStylish($diff);
+        case 'plain':
+            return formatPlain($diff);
+        case 'json':
+            return formatJson($diff);
+        default:
+            throw new \Exception("Unknown format: '{$formatName}'");
     }
-
-    return $formatters[$formatName]($diff);
 }

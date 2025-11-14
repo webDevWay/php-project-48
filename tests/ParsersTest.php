@@ -4,7 +4,7 @@ namespace Differ\Tests;
 
 use PHPUnit\Framework\TestCase;
 
-use function Differ\Parsers\{parse, getFileFormat};
+use function Differ\Parsers\parse;
 
 class ParsersTest extends TestCase
 {
@@ -38,20 +38,7 @@ class ParsersTest extends TestCase
         $this->assertEquals('value', $result->parent->child);
     }
 
-    public function testGetFileFormat(): void
-    {
-        $this->assertEquals('json', getFileFormat('file.json'));
-        $this->assertEquals('yaml', getFileFormat('file.yaml'));
-        $this->assertEquals('yaml', getFileFormat('file.yml'));
-    }
-
-    public function testGetFileFormatWithUnsupportedFormat(): void
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("Unsupported file format: txt");
-
-        getFileFormat('file.txt');
-    }
+    /**/
 
     public function testParseWithInvalidJson(): void
     {
@@ -59,14 +46,6 @@ class ParsersTest extends TestCase
         $this->expectExceptionMessage("JSON parsing error");
 
         parse('invalid json', 'json');
-    }
-
-    public function testParseWithInvalidYaml(): void
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("YAML parsing error");
-
-        parse("invalid: yaml: content", 'yaml');
     }
 
     public function testParseWithUnsupportedFormat(): void

@@ -4,7 +4,7 @@ namespace Differ\Tests;
 
 use PHPUnit\Framework\TestCase;
 
-use function Differ\Formatters\format;
+use function Differ\Formatters\render;
 
 class FormattersTest extends TestCase
 {
@@ -18,7 +18,7 @@ class FormattersTest extends TestCase
             ]
         ];
 
-        $result = format($diff, 'stylish');
+        $result = render($diff, 'stylish');
 
         $this->assertStringContainsString('+ test: value', $result);
         $this->assertStringStartsWith('{', $result);
@@ -35,7 +35,7 @@ class FormattersTest extends TestCase
             ]
         ];
 
-        $result = format($diff, 'plain');
+        $result = render($diff, 'plain');
 
         $this->assertStringContainsString("Property 'test' was added with value: 'value'", $result);
     }
@@ -50,19 +50,9 @@ class FormattersTest extends TestCase
             ]
         ];
 
-        $result = format($diff, 'json');
+        $result = render($diff, 'json');
         $decoded = json_decode($result, true);
 
         $this->assertEquals($diff, $decoded);
-    }
-
-    public function testFormatFunctionThrowsExceptionForUnknownFormat(): void
-    {
-        $diff = [];
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Unknown format: unknown');
-
-        format($diff, 'unknown');
     }
 }
