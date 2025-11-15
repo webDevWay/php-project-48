@@ -28,7 +28,7 @@ try {
     $format = $response['--format'];
     
     $diff = genDiff($file1, $file2, $format);
-    echo $diff . "\n";    
+    echo $diff;
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage() . "\n";
     exit(1);

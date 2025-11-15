@@ -11,8 +11,11 @@ function genDiff(string $filePath1, string $filePath2, string $format = 'stylish
     $content1 = getFileContent($filePath1);
     $content2 = getFileContent($filePath2);
 
-    $data1 = parse($content1, getFileFormat($filePath1));
-    $data2 = parse($content2, getFileFormat($filePath2));
+    $extension1 = pathinfo($filePath1, PATHINFO_EXTENSION);
+    $extension2 = pathinfo($filePath2, PATHINFO_EXTENSION);
+
+    $data1 = parse($content1, $extension1);
+    $data2 = parse($content2, $extension2);
 
     $diff = buildDiff($data1, $data2);
     return render($diff, $format);
@@ -30,17 +33,6 @@ function getFileContent(string $filePath): string
     }
 
     return $content;
-}
-
-function getFileFormat(string $filePath): string
-{
-    $extension = pathinfo($filePath, PATHINFO_EXTENSION);
-
-    return match ($extension) {
-        'json' => 'json',
-        'yaml', 'yml' => 'yaml',
-        default => throw new \Exception("Unsupported file format: {$extension}")
-    };
 }
 
 function buildDiff(object $data1, object $data2): array

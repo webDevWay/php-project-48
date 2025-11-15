@@ -5,12 +5,12 @@ namespace Differ\Parsers;
 use Symfony\Component\Yaml\Yaml;
 use Exception;
 
-function parse(string $content, string $format): object
+function parse(string $content, string $extension): object
 {
-    return match ($format) {
+    return match ($extension) {
         'json' => parseJson($content),
         'yaml', 'yml' => parseYaml($content),
-        default => throw new \Exception("Unsupported format: {$format}")
+        default => throw new \Exception("Unsupported format: {$extension}")
     };
 }
 
