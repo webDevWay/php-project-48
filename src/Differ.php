@@ -40,7 +40,9 @@ function buildDiff(object $data1, object $data2): array
     $keys1 = array_keys(get_object_vars($data1));
     $keys2 = array_keys(get_object_vars($data2));
     $allKeys = array_unique(array_merge($keys1, $keys2));
-    $sortedKeys = sortKeys($allKeys);
+    $sortedKeys = sort($allKeys, function($a, $b) {
+        return strcmp($a, $b);
+    });
 
     return array_map(function ($key) use ($data1, $data2) {
         return buildNode($key, $data1, $data2);
@@ -130,9 +132,3 @@ function isObject(mixed $value): bool
     return is_object($value);
 }
 
-function sortKeys(array $keys): array
-{
-    return sort($keys, function ($a, $b) {
-        return strcmp($a, $b);
-    });
-}

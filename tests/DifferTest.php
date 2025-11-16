@@ -12,12 +12,6 @@ function getFixturePath(string $filename): string
     return __DIR__ . '/fixtures/' . $filename;
 }
 
-function getFixtureContent(string $filename): string
-{
-    $path = getFixturePath($filename);
-    return file_get_contents($path);
-}
-
 class DifferTest extends TestCase
 {
     public static function fileFormatsProvider(): array
@@ -31,19 +25,19 @@ class DifferTest extends TestCase
     #[DataProvider('fileFormatsProvider')]
     public function testRecursiveComparisonJsonStylishFormat(string $format): void
     {
-        $expected = file_get_contents(getFixturePath('expected_nested.txt'));
+        $expected = getFixturePath('expected_nested.txt');
 
         $actual = genDiff(getFixturePath("file1.{$format}"), getFixturePath("file2.{$format}"));
-        $this->assertNotEquals($expected, $actual);
+        $this->assertStringNotEqualsFile($expected, $actual);
     }
 
     #[DataProvider('fileFormatsProvider')]
     public function testPlainFormatOutput(string $format): void
     {
-        $expected = file_get_contents(getFixturePath('expected_plain.txt'));
+        $expected = getFixturePath('expected_plain.txt');
 
         $actual = genDiff(getFixturePath("file1.{$format}"), getFixturePath("file2.{$format}"), 'plain');
-        $this->assertEquals($expected, $actual);
+        $this->assertStringEqualsFile($expected, $actual);
     }
 
     #[DataProvider('fileFormatsProvider')]
